@@ -2,7 +2,9 @@
 #include <nan.h>
 #include <v8.h>
 #include "jukebox.h"
-#include "track.h"
+//#include "track.h"
+
+using namespace v8;
 
 NAN_METHOD(Version) {
   NanScope();
@@ -19,15 +21,15 @@ NAN_METHOD(ListDecoders) {
   NanReturnValue(String::New(musly_jukebox_listdecoders()));
 }
 
-NAN_METHOD(CreateJukebox) {
+/*NAN_METHOD(CreateJukebox) {
   NanScope();
   NanReturnValue(Jukebox::NewInstance(args[0]));
-}
+}*/
 
-NAN_METHOD(CreateTrack) {
+/*NAN_METHOD(CreateTrack) {
   NanScope();
   NanReturnValue(Track::NewInstance());
-}
+}*/
 
 NAN_METHOD(Debug) {
   NanScope();
@@ -38,8 +40,8 @@ NAN_METHOD(Debug) {
 
 void InitAll(Handle<Object> exports) {
   
-  Track::Init();
-  Jukebox::Init();
+  //Track::Init();
+  Jukebox::Init(exports);
   
   //"Global" Methods
   exports->Set(NanNew<String>("version"), FunctionTemplate::New(Version)->GetFunction());
@@ -48,8 +50,8 @@ void InitAll(Handle<Object> exports) {
   exports->Set(NanNew<String>("listDecoders"), FunctionTemplate::New(ListDecoders)->GetFunction());
   
   //Jukebox
-  exports->Set(NanNew<String>("jukebox"), FunctionTemplate::New(CreateJukebox)->GetFunction());
-  exports->Set(NanNew<String>("track"), FunctionTemplate::New(CreateTrack)->GetFunction());
+  //exports->Set(NanNew<String>("jukebox"), FunctionTemplate::New(CreateJukebox)->GetFunction());
+  //exports->Set(NanNew<String>("track"), FunctionTemplate::New(CreateTrack)->GetFunction());
 }
 
 NODE_MODULE(binding, InitAll)

@@ -2,7 +2,7 @@
   "name": "node-musly",
   "version": "0.0.0",
   "description": "Node.js bindings for Musly",
-  "main": "index.js",
+  "main": "./lib",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

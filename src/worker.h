@@ -2,9 +2,10 @@
 #define WORKER_H
 
 #include <vector>
-#include "jukebox.h"
 #include <nan.h>
 #include <musly/musly.h>
+
+#include "jukebox.h"
 
 class AnalyzeAudioWorker : public NanAsyncWorker {
 public:
@@ -18,27 +19,40 @@ public:
   void HandleOKCallback();
     
 private:
-  musly_jukebox* jukebox;
-    float excerpt_length;
-    float excerpt_start;
-    musly_track* track;
-    NanAsciiString* audiofile;
+  Jukebox* jukebox;
+  float excerpt_length;
+  float excerpt_start;
+  NanAsciiString* audiofile;
+  unsigned char* trackBuffer;
 };
 
-class AddTracksWorker : public NanAsyncWorker {
+class ReadyWorker : public NanAsyncWorker {
 public:
-  AddTracksWorker(NanCallback * callback,
+  ReadyWorker(NanCallback* callback,
       v8::Local<v8::Object> &jukeboxHandle,
-      v8::Local<v8::Array> &tracksHandle);
+      int samplesize);
   void Execute();
   void HandleOKCallback();
 
 private:
-  musly_jukebox* jukebox;
-  std::vector<musly_track*> tracks;
-  std::vector<musly_trackid> trackids;
-  int num_tracks;
-  int generate_ids;
+  Jukebox* jukebox;
+  int sampleSize;
+};
+
+class RecommendWorker : public NanAsyncWorker {
+public:
+  RecommendWorker(NanCallback* callback,
+      v8::Local<v8::Object> &jukeboxHandle,
+      int seed,int topN,int guessLength);
+  void Execute();
+  void HandleOKCallback();
+
+private:
+  Jukebox* jukebox;
+  int seed;
+  int topN;
+  int guessLength;
+  std::vector<similarity_knn> results;
 };
 
 #endif

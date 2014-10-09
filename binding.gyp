@@ -3,8 +3,7 @@
     {
       "target_name": "binding",
       "sources": [
-          "src/binding.cc",
-          'src/track.cc',
+          'src/binding.cc',
           'src/jukebox.cc',
           'src/worker.cc'
       ],

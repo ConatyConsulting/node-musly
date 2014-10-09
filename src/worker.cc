@@ -1,12 +1,6 @@
 #include "worker.h"
-#include "track.h"
-#include "jukebox.h"
-
-#include <nan.h>
 
 #include <iostream>
-
-using namespace v8;
 
 AnalyzeAudioWorker::AnalyzeAudioWorker(NanCallback* callback,
     v8::Local<v8::Object> &jukeboxHandle,
@@ -16,9 +10,7 @@ AnalyzeAudioWorker::AnalyzeAudioWorker(NanCallback* callback,
   : NanAsyncWorker(callback),  excerpt_length(excerpt_length), excerpt_start(excerpt_start), audiofile(audiofile) {
 
   SaveToPersistent("jukebox", jukeboxHandle);
-
-  jukebox = node::ObjectWrap::Unwrap<Jukebox>(jukeboxHandle)->musly();
-  track = musly_track_alloc(jukebox);
+  jukebox = node::ObjectWrap::Unwrap<Jukebox>(jukeboxHandle);
 }
 
 AnalyzeAudioWorker::~AnalyzeAudioWorker() {
@@ -26,7 +18,8 @@ AnalyzeAudioWorker::~AnalyzeAudioWorker() {
 }
 
 void AnalyzeAudioWorker::Execute() {
-  int ret = musly_track_analyze_audiofile(jukebox,**audiofile,excerpt_length,excerpt_start,track);
+  std::cout << "AnalyzeAudioWorker::Execute";
+  int ret = jukebox->analyzeAudiofile(**audiofile,excerpt_length,excerpt_start,&trackBuffer);
   if (ret == -1) {
     SetErrorMessage("Error in musly_track_analyze_audiofile");
   }
@@ -35,59 +28,76 @@ void AnalyzeAudioWorker::Execute() {
 void AnalyzeAudioWorker::HandleOKCallback() {
   NanScope();
 
-  Local<Object> jsTrack = Track::NewInstance();
-  Track* obj = ObjectWrap::Unwrap<Track>(jsTrack);
-  obj->musly(track);
-  obj->jukebox(jukebox);
+  int length = jukebox->trackBinSize();
+  node::Buffer *slowBuffer = node::Buffer::New(length);
+  memcpy(node::Buffer::Data(slowBuffer), trackBuffer, length);
 
-  Local<Value> argv[] = {
+  v8::Local<v8::Object> globalObj = NanGetCurrentContext()->Global();
+  v8::Local<v8::Function> bufferConstructor = globalObj->Get(NanNew("Buffer")).As<v8::Function>();
+  v8::Handle<v8::Value> constructorArgs[3] = { slowBuffer->handle_, NanNew(length), NanNew(0) };
+  v8::Local<v8::Object> actualBuffer = bufferConstructor->NewInstance(3, constructorArgs);
+
+  v8::Local<v8::Value> argv[] = {
     NanNull(),
-    jsTrack
+    actualBuffer
   };
   callback->Call(2, argv);
 }
 
+ReadyWorker::ReadyWorker(NanCallback* callback,
+    v8::Local<v8::Object> &jukeboxHandle,
+    int sampleSize)
+    : NanAsyncWorker(callback),  sampleSize(sampleSize) {
 
-AddTracksWorker::AddTracksWorker(NanCallback *callback, v8::Local<v8::Object> &jukeboxHandle, v8::Local<v8::Array> &tracksHandle)
-  : NanAsyncWorker(callback) {
-
-  std::cout << "Add Tracks Worker: Constructor\n";
   SaveToPersistent("jukebox", jukeboxHandle);
-  SaveToPersistent("tracks", tracksHandle);
-
-  jukebox = node::ObjectWrap::Unwrap<Jukebox>(jukeboxHandle)->musly();
-
-  std::cout << "Add Tracks Worker: Adding " << tracksHandle->Length() << " Tracks to vector\n";
-  for (int index = 0, size = tracksHandle->Length(); index < size; index++) {
-    Track* track = ObjectWrap::Unwrap<Track>(tracksHandle->Get(index).As<Object>());
-    tracks.push_back(track->musly());
-  }
-
-  trackids.assign(tracks.size(), -1);
+  jukebox = node::ObjectWrap::Unwrap<Jukebox>(jukeboxHandle);
 }
 
-void AddTracksWorker::Execute() {
-  std::cout << "Add Tracks Worker: Execute on " << tracks.size() << " tracks\n";
-  std::cout << tracks.data() << "\n";
-  std::cout << trackids.data() << "\n";
-  int ret = musly_jukebox_addtracks(jukebox, tracks.data(), trackids.data(), tracks.size(), 1);
-  if (ret == -1) {
-    SetErrorMessage("Failed musly_jukebox_addtracks");
+void ReadyWorker::Execute() {
+  if (!jukebox->ready(sampleSize)) {
+    SetErrorMessage("Error in Jukebox::ready");
   }
 }
 
-void AddTracksWorker::HandleOKCallback() {
-  NanScope();
+void ReadyWorker::HandleOKCallback() {
+  v8::Local<v8::Value> argv[] = {
+      NanNull()
+  };
 
-  std::cout << "Add Tracks Worker: HandleOKCallback\n";
-  Local<Array> ids = NanNew<Array>(trackids.size());
-  for (int i = 0; i < (int)trackids.size(); i++) {
-    ids->Set(i,NanNew<Integer>(trackids[i]));
+  callback->Call(1,argv);
+}
+
+RecommendWorker::RecommendWorker(NanCallback* callback,
+    v8::Local<v8::Object> &jukeboxHandle,
+    int seed,int topN,int guessLength)
+: NanAsyncWorker(callback), seed(seed), topN(topN), guessLength(guessLength) {
+
+  SaveToPersistent("jukebox", jukeboxHandle);
+  jukebox = node::ObjectWrap::Unwrap<Jukebox>(jukeboxHandle);
+
+  std::cout << "RecommendWorker::RecommendWorker seed = " << seed << ", topN = " << topN << ", guessLength = " << guessLength << "\n";
+}
+
+void RecommendWorker::Execute() {
+  results = jukebox->recommend(seed, topN, guessLength);
+  if (results.size() == 0) {
+    SetErrorMessage("Error in Jukebox::recommend. Empty results");
   }
+}
 
-  Local<Value> argv[] = {
+void RecommendWorker::HandleOKCallback() {
+
+  v8::Local<v8::Array> arr = NanNew<v8::Array>(results.size());
+  for (int i = 0; i < (int) results.size(); i++) {
+    v8::Local<v8::Array> pair = NanNew<v8::Array>();
+    pair->Set(0,NanNew<v8::Integer>(results[i].first));
+    pair->Set(1,NanNew<v8::Number>(results[i].second));
+    arr->Set(i,pair);
+    std::cout << "RecommendWorker::HandleOKCallback - Set Pair (" << results[i].first << "," << results[i].second << ")\n";
+  }
+  v8::Local<v8::Value> argv[] = {
       NanNull(),
-      ids
+      arr
   };
 
   callback->Call(2,argv);

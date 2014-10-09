@@ -1,36 +1,32 @@
 var musly = require('bindings')('binding.node');
-
 musly.debug(5);
+console.log(musly);
+var juke = new musly.Jukebox();
+console.log(juke);
 
-console.log("VERSION");
-console.log(musly.version() + "\n");
+juke.analyzeAudiofile("test.wav", 30, 0, function (err, buffer) {
+   if (err) {
+       throw err;
+   } else {
+       console.log(buffer);
+       console.log(buffer.length);
+       for (var i=0; i < 5; i++) {
+           juke.addTrack(i,buffer);
+       }
+       juke.ready(function (err) {
+           if (err) {
+               throw err;
+           } else {
+               juke.recommend(0,5,0, function (err, similarities) {
+                   if (err) {
+                       throw err;
 
-console.log("METHODS");
-console.log(musly.listMethods() + "\n");
-
-console.log("DECODERS");
-console.log(musly.listDecoders() + "\n");
-
-var juke = musly.jukebox();
-console.log("ABOUT")
-console.log(juke.about() + "\n");
-
-juke.analyzeAudiofile("test.wav", 30, 0, function (err, track) {
-  if (err) {
-      throw err;
-  } else {
-      var buf = track.toBuffer();
-      console.log("Exported track to Buffer of length " + buf.length);
-
-      var track2 = juke.createTrack(buf);
-
-      var tracks = [track, track2];
-      tracks.forEach(function (t) {
-          console.log(t.toString());
-      });
-
-      juke.addTracks(tracks, function (err, ids) {
-          console.log("Added " + ids.length + " tracks to Jukebox: [" + ids.join(',') + "]");
-      })
-  }
+                   } else {
+                       console.log(similarities);
+                       console.log("DONE");
+                   }
+               })
+           }
+       })
+   }
 });
