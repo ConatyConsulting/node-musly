@@ -1,12 +1,23 @@
 {
   "name": "node-musly",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Node.js bindings for Musly",
-  "main": "./lib",
+  "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "Garrett Conaty",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:ConatyConsulting/node-musly.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ConatyConsulting/node-musly/issues"
+  }
+  "keywords": [
+    "audio",
+    "similarity"
+  ]
+  "author": "Garrett Conaty <garrett@conaty.net>",
   "license": "ISC",
   "dependencies": {
     "bindings": "^1.2.1",
