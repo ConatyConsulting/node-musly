@@ -29,17 +29,10 @@ void AnalyzeAudioWorker::HandleOKCallback() {
   NanScope();
 
   int length = jukebox->trackBinSize();
-  node::Buffer *slowBuffer = node::Buffer::New(length);
-  memcpy(node::Buffer::Data(slowBuffer), trackBuffer, length);
-
-  v8::Local<v8::Object> globalObj = NanGetCurrentContext()->Global();
-  v8::Local<v8::Function> bufferConstructor = globalObj->Get(NanNew("Buffer")).As<v8::Function>();
-  v8::Handle<v8::Value> constructorArgs[3] = { slowBuffer->handle_, NanNew(length), NanNew(0) };
-  v8::Local<v8::Object> actualBuffer = bufferConstructor->NewInstance(3, constructorArgs);
-
+  v8::Local<v8::Object> jsBuffer = NanBufferUse((char *)trackBuffer, length);
   v8::Local<v8::Value> argv[] = {
     NanNull(),
-    actualBuffer
+    jsBuffer
   };
   callback->Call(2, argv);
 }

@@ -8,17 +8,17 @@ using namespace v8;
 
 NAN_METHOD(Version) {
   NanScope();
-  NanReturnValue(String::New(musly_version()));
+  NanReturnValue(NanNew<String>(musly_version()));
 }
 
 NAN_METHOD(ListMethods) {
   NanScope();
-  NanReturnValue(String::New(musly_jukebox_listmethods()));
+  NanReturnValue(NanNew<String>(musly_jukebox_listmethods()));
 }
 
 NAN_METHOD(ListDecoders) {
   NanScope();
-  NanReturnValue(String::New(musly_jukebox_listdecoders()));
+  NanReturnValue(NanNew<String>(musly_jukebox_listdecoders()));
 }
 
 /*NAN_METHOD(CreateJukebox) {
@@ -44,10 +44,10 @@ void InitAll(Handle<Object> exports) {
   Jukebox::Init(exports);
   
   //"Global" Methods
-  exports->Set(NanNew<String>("version"), FunctionTemplate::New(Version)->GetFunction());
-  exports->Set(NanNew<String>("debug"), FunctionTemplate::New(Debug)->GetFunction());
-  exports->Set(NanNew<String>("listMethods"), FunctionTemplate::New(ListMethods)->GetFunction());
-  exports->Set(NanNew<String>("listDecoders"), FunctionTemplate::New(ListDecoders)->GetFunction());
+  exports->Set(NanNew<String>("version"), NanNew<FunctionTemplate>(Version)->GetFunction());
+  exports->Set(NanNew<String>("debug"), NanNew<FunctionTemplate>(Debug)->GetFunction());
+  exports->Set(NanNew<String>("listMethods"), NanNew<FunctionTemplate>(ListMethods)->GetFunction());
+  exports->Set(NanNew<String>("listDecoders"), NanNew<FunctionTemplate>(ListDecoders)->GetFunction());
   
   //Jukebox
   //exports->Set(NanNew<String>("jukebox"), FunctionTemplate::New(CreateJukebox)->GetFunction());
