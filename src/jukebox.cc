@@ -3,7 +3,7 @@
 #include "worker.h"
 
 #include <iostream>
-#include <QuartzCore/QuartzCore.h>
+#include <algorithm>
 
 
 Jukebox::Jukebox(const char* method, const char* decoder) {
