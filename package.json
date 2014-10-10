@@ -12,11 +12,11 @@
   },
   "bugs": {
     "url": "https://github.com/ConatyConsulting/node-musly/issues"
-  }
+  },
   "keywords": [
     "audio",
     "similarity"
-  ]
+  ],
   "author": "Garrett Conaty <garrett@conaty.net>",
   "license": "ISC",
   "dependencies": {
